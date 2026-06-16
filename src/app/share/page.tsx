@@ -3,11 +3,12 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
+  BadgeCheck,
   CheckCircle2,
-  Clock,
+  ChevronRight,
   Download,
+  Link2,
   QrCode,
-  User,
 } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
 import DummyQR from "@/components/DummyQR";
@@ -21,30 +22,29 @@ export default function SharePage() {
   const router = useRouter();
   const [startDate, setStartDate] = useState(todayISO());
   const [imported, setImported] = useState<string | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
 
-  const handleImport = (template: ProtocolTemplate) => {
-    importProtocol(template, startDate);
+  const flash = (msg: string) => {
+    setToast(msg);
+    setTimeout(() => setToast(null), 1500);
+  };
+
+  const handleImport = async (template: ProtocolTemplate) => {
+    await importProtocol(template, startDate);
     setImported(template.name);
-    // 少し見せてからカレンダーへ
     setTimeout(() => router.push("/"), 1200);
   };
 
   return (
     <>
       <header className="sticky top-0 z-20 flex items-center gap-2 border-b border-slate-100 bg-white/95 px-4 py-3 backdrop-blur">
-        <QrCode size={22} className="text-blue-600" />
-        <h1 className="text-lg font-bold tracking-tight text-slate-800">
-          プロトコル共有
+        <QrCode size={20} className="text-blue-600" />
+        <h1 className="text-base font-bold tracking-tight text-slate-800">
+          PROTOCOL SHARE
         </h1>
       </header>
 
-      <main className="flex-1 space-y-4 px-4 py-4 pb-6">
-        <p className="text-sm text-slate-500">
-          先輩が作ったプロトコルをQRから取り込み、放置・拘束を仕分けした
-          スケジュールをカレンダーに自動展開します。
-        </p>
-
-        {/* 展開開始日 */}
+      <main className="flex-1 space-y-5 px-4 py-4 pb-6">
         <label className="flex items-center justify-between rounded-xl border border-slate-200 px-3 py-2.5 text-sm">
           <span className="font-medium text-slate-600">展開する開始日</span>
           <input
@@ -60,55 +60,67 @@ export default function SharePage() {
             key={p.id}
             className="overflow-hidden rounded-2xl border border-slate-200"
           >
-            <div className="flex gap-3 p-4">
-              <div className="shrink-0">
-                <DummyQR seed={p.id} size={96} />
-              </div>
-              <div className="min-w-0">
-                <h2 className="text-sm font-bold text-slate-800">{p.name}</h2>
-                <p className="mt-0.5 flex items-center gap-2 text-[11px] text-slate-400">
-                  <span className="flex items-center gap-0.5">
-                    <User size={11} />
-                    {p.author}
+            <div className="p-4">
+              <p className="text-[11px] text-slate-400">From: {p.author}</p>
+              <h2 className="mt-0.5 text-lg font-bold leading-snug text-slate-800">
+                {p.name}
+              </h2>
+              <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-slate-400">
+                <span>作成者: {p.author}</span>
+                {p.verified && (
+                  <span className="inline-flex items-center gap-0.5 text-green-600">
+                    <BadgeCheck size={12} />
+                    検証済み
                   </span>
-                  <span className="flex items-center gap-0.5">
-                    <Clock size={11} />
-                    {p.durationDays}日間 / {p.steps.length}ステップ
-                  </span>
-                </p>
-                <p className="mt-1.5 text-xs leading-relaxed text-slate-500">
-                  {p.description}
-                </p>
+                )}
+                {p.version && <span>バージョン: {p.version}</span>}
+              </p>
+              <p className="mt-2 text-xs leading-relaxed text-slate-500">
+                {p.description}
+              </p>
+            </div>
+
+            {/* QR: The Key */}
+            <div className="px-4">
+              <div className="flex flex-col items-center rounded-xl border-2 border-green-400 bg-green-50/40 p-4">
+                <span className="mb-2 text-[11px] font-semibold tracking-widest text-green-600">
+                  THE KEY
+                </span>
+                <DummyQR seed={p.id} size={160} />
               </div>
             </div>
 
-            {/* ステップのプレビュー */}
-            <ul className="space-y-1 border-t border-slate-100 bg-slate-50/60 px-4 py-3">
-              {p.steps.map((s, i) => (
-                <li key={i} className="flex items-center gap-2 text-xs">
-                  <span
-                    className={`inline-flex w-9 shrink-0 justify-center rounded px-1 py-[1px] text-[10px] font-semibold ${
-                      s.type === "active"
-                        ? "bg-blue-600 text-white"
-                        : "border border-dashed border-slate-300 bg-white text-slate-500"
-                    }`}
-                  >
-                    {s.type === "active" ? "拘束" : "放置"}
-                  </span>
-                  <span className="text-slate-400">Day {s.dayOffset + 1}</span>
-                  <span className="truncate text-slate-600">{s.title}</span>
-                </li>
-              ))}
-            </ul>
-
-            <div className="p-3">
+            <div className="space-y-2 p-4">
               <button
                 onClick={() => handleImport(p)}
-                className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-blue-600 py-2.5 text-sm font-semibold text-white active:bg-blue-700"
+                className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-green-500 py-3 text-sm font-semibold text-white active:bg-green-600"
               >
                 <Download size={16} />
-                このQRを読み込む（インポート）
+                ラボにインポート
               </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => flash("共有リンクをコピーしました（モック）")}
+                  className="flex flex-1 items-center justify-center gap-1 rounded-xl border border-slate-200 py-2 text-xs font-medium text-slate-600 active:bg-slate-50"
+                >
+                  さらにシェア
+                  <ChevronRight size={14} />
+                </button>
+                <button
+                  onClick={() => flash("リンクをコピーしました（モック）")}
+                  aria-label="リンクを共有"
+                  className="rounded-xl border border-slate-200 p-2 text-slate-500 active:bg-slate-50"
+                >
+                  <Link2 size={16} />
+                </button>
+                <button
+                  onClick={() => flash("QRを表示しました（モック）")}
+                  aria-label="QRを共有"
+                  className="rounded-xl border border-slate-200 p-2 text-slate-500 active:bg-slate-50"
+                >
+                  <QrCode size={16} />
+                </button>
+              </div>
             </div>
           </article>
         ))}
@@ -116,7 +128,14 @@ export default function SharePage() {
 
       <BottomNav />
 
-      {/* インポート完了トースト */}
+      {toast && (
+        <div className="pointer-events-none fixed inset-x-0 bottom-24 z-50 flex justify-center">
+          <span className="rounded-full bg-slate-800/90 px-4 py-2 text-xs font-medium text-white">
+            {toast}
+          </span>
+        </div>
+      )}
+
       {imported && (
         <div className="fixed inset-0 z-50 flex items-center justify-center px-8">
           <div className="absolute inset-0 bg-black/30" />

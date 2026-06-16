@@ -34,8 +34,43 @@ export function formatDateLabel(iso: string): string {
   return `${d.getMonth() + 1}月${d.getDate()}日(${WEEKDAY_JA[d.getDay()]})`;
 }
 
+// カレンダーは月曜始まり表示
+const WEEKDAY_HEADER_MON = ["月", "火", "水", "木", "金", "土", "日"];
+
 export function weekdayLabels(): string[] {
-  return WEEKDAY_JA;
+  return WEEKDAY_HEADER_MON;
+}
+
+/** task の date+time を Date に。time が無ければ 00:00。*/
+export function toDateTime(date: string, time?: string): Date {
+  const d = fromISODate(date);
+  if (time) {
+    const [h, m] = time.split(":").map(Number);
+    d.setHours(h, m, 0, 0);
+  }
+  return d;
+}
+
+/** 秒数を HH:MM:SS（ゼロ埋め）に。負値は 0 扱い。*/
+export function formatHMS(totalSeconds: number): string {
+  const s = Math.max(0, Math.floor(totalSeconds));
+  const hh = String(Math.floor(s / 3600)).padStart(2, "0");
+  const mm = String(Math.floor((s % 3600) / 60)).padStart(2, "0");
+  const ss = String(s % 60).padStart(2, "0");
+  return `${hh}:${mm}:${ss}`;
+}
+
+/** date+time を hours 時間ずらした新しい {date, time} を返す（日跨ぎ対応）。*/
+export function shiftDateTime(
+  date: string,
+  time: string,
+  hours: number
+): { date: string; time: string } {
+  const d = toDateTime(date, time);
+  d.setHours(d.getHours() + hours);
+  const hh = String(d.getHours()).padStart(2, "0");
+  const mm = String(d.getMinutes()).padStart(2, "0");
+  return { date: toISODate(d), time: `${hh}:${mm}` };
 }
 
 /** 「2026年6月」のような月見出し */
@@ -57,7 +92,8 @@ export interface CalendarCell {
 export function buildMonthGrid(year: number, month0: number): CalendarCell[] {
   const today = todayISO();
   const first = new Date(year, month0, 1);
-  const startOffset = first.getDay(); // 日曜=0
+  // 月曜始まり: 月=0 ... 日=6
+  const startOffset = (first.getDay() + 6) % 7;
   const gridStart = new Date(year, month0, 1 - startOffset);
 
   const cells: CalendarCell[] = [];

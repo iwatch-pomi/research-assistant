@@ -85,7 +85,7 @@ export default function CalendarMonth({ onSelectDate }: CalendarMonthProps) {
           <div
             key={w}
             className={`py-1.5 ${
-              i === 0 ? "text-red-400" : i === 6 ? "text-blue-400" : "text-slate-400"
+              i === 6 ? "text-red-400" : i === 5 ? "text-blue-400" : "text-slate-400"
             }`}
           >
             {w}

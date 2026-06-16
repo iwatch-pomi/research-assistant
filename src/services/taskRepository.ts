@@ -14,6 +14,7 @@ export interface NewTaskInput {
   time?: string; // HH:MM
   type: "idle" | "active";
   isCompleted?: boolean;
+  location?: string;
   notes?: string;
   odValue?: number;
   protocolId?: string;

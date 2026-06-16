@@ -8,6 +8,7 @@ export interface ExperimentTask {
   time?: string; // HH:MM
   type: "idle" | "active"; // idle=放置 / active=拘束
   isCompleted: boolean;
+  location?: string; // 場所（例: 実験室A / 培養室 / 分析室B）
   notes?: string;
   odValue?: number; // 拘束タスク用のダミーデータ（OD600 など）
   protocolId?: string; // どのプロトコル由来か（任意）
@@ -19,6 +20,7 @@ export interface ProtocolStep {
   dayOffset: number; // 開始日からの相対日数（0,1,2,...）
   time?: string; // HH:MM
   type: "idle" | "active";
+  location?: string; // 場所
 }
 
 /** 共有可能なプロトコルテンプレート */
@@ -28,5 +30,7 @@ export interface ProtocolTemplate {
   description: string;
   durationDays: number;
   author: string; // 例: 先輩の名前
+  version?: string; // 例: "2.1"
+  verified?: boolean; // 検証済みバッジ
   steps: ProtocolStep[];
 }

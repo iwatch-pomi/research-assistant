@@ -36,6 +36,7 @@ function buildTask(input: NewTaskInput): ExperimentTask {
     time: input.time,
     type: input.type,
     isCompleted: input.isCompleted ?? false,
+    location: input.location,
     notes: input.notes,
     odValue: input.odValue,
     protocolId: input.protocolId,

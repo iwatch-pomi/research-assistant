@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import type { ExperimentTask, ProtocolTemplate } from "@/lib/types";
-import { addDays } from "@/lib/date";
+import { addDays, shiftDateTime } from "@/lib/date";
 import {
   getTaskRepository,
   type NewTaskInput,
@@ -21,6 +21,7 @@ export function expandProtocol(
     date: addDays(startDate, step.dayOffset),
     time: step.time,
     type: step.type,
+    location: step.location,
     protocolId: template.id,
   }));
 }
@@ -105,6 +106,21 @@ export function useTaskStore() {
     [refreshIfNeeded]
   );
 
+  // 「全体を N 時間一括シフト」: 未完了かつ時刻ありのタスクをまとめてずらす。
+  const shiftAllIncomplete = useCallback(
+    async (hours: number) => {
+      const targets = tasks.filter((t) => !t.isCompleted && t.time);
+      await Promise.all(
+        targets.map((t) => {
+          const { date, time } = shiftDateTime(t.date, t.time!, hours);
+          return repo.update(t.id, { date, time });
+        })
+      );
+      await refreshIfNeeded();
+    },
+    [tasks, refreshIfNeeded]
+  );
+
   // 派生データ（純粋な絞り込み・並べ替え）はクライアント側で計算。
   const getTasksByDate = useCallback(
     (date: string) =>
@@ -121,6 +137,7 @@ export function useTaskStore() {
     updateTask,
     toggleComplete,
     importProtocol,
+    shiftAllIncomplete,
     getTasksByDate,
   };
 }
