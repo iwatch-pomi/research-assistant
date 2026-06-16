@@ -22,6 +22,7 @@
 - Tailwind CSS v4（素の Tailwind コンポーネント、shadcn 未使用）
 - lucide-react（アイコン）
 - 状態管理: React `useState` + Context（インメモリのモックデータ。DB 接続なし）
+- データアクセス: リポジトリ層で抽象化（後述）。将来 Firebase/Firestore へ差し替え可能
 
 ## 開発
 
@@ -53,7 +54,13 @@ src/
     BottomNav.tsx     # カレンダー / 共有 タブ
     DummyQR.tsx       # インライン SVG のダミー QR
   context/
-    TaskContext.tsx   # タスク状態とアクション
+    TaskContext.tsx   # タスクストアをツリーへ配る薄い Provider
+  hooks/
+    useTaskStore.ts   # リポジトリ層と React 状態を橋渡しするカスタムフック
+  services/           # ★データアクセス層（保存・更新の処理を分離）
+    taskRepository.ts        # TaskRepository インターフェース ＋ getTaskRepository() ファクトリ
+    localTaskRepository.ts   # 現在の実装（インメモリ＋onSnapshot 相当の購読）
+    firebaseTaskRepository.ts # 将来の Firebase 実装の雛形（差し替え先）
   lib/
     types.ts          # 型定義（ExperimentTask / ProtocolTemplate）
     conflicts.ts      # コンフリクト検知（拘束同士のみ警告）
@@ -63,3 +70,24 @@ src/
 ```
 
 > MVP のためデータは永続化されません（リロードで初期状態に戻ります）。
+
+## データアクセス層（クラウド DB 移行の設計）
+
+将来 Firebase などのクラウド DB と接続し、**Web と iPhone アプリでデータを同期**できるよう、データの保存・取得・更新の処理はコンポーネントから切り離してあります。
+
+```
+UI コンポーネント
+   ↓ （useTasks）
+TaskContext        … ストアをツリーへ配るだけ
+   ↓
+useTaskStore (hook) … リポジトリ ⇄ React 状態の橋渡し、プロトコル展開
+   ↓ （getTaskRepository）
+TaskRepository      … 抽象インターフェース（Promise ベースの非同期 CRUD ＋ subscribe）
+   ├─ localTaskRepository    … 現在: インメモリ（onSnapshot 相当の購読つき）
+   └─ firebaseTaskRepository … 将来: Firestore 実装（雛形あり）
+```
+
+- 書き込み系（`create` / `update` / `remove` / `createMany`）はすべて **Promise を返す非同期 API** なので、そのまま Firestore SDK や REST 通信へ置き換えられます。
+- `subscribe()` は Firestore の `onSnapshot` 相当で、リアルタイム同期（複数端末間の自動反映）の受け口です。
+- **差し替えポイントは `getTaskRepository()`（`src/services/taskRepository.ts`）の 1 箇所のみ**。`firebaseTaskRepository` を返すよう切り替えれば、UI・フックは無変更でクラウド同期へ移行できます（例: 環境変数 `NEXT_PUBLIC_DATA_BACKEND` で分岐）。
+- `firebaseTaskRepository.ts` に Firestore での実装手順（`getDocs` / `addDoc` / `onSnapshot` など）をコメントで記載しています。
