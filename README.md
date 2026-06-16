@@ -33,10 +33,26 @@ npm run dev
 
 [http://localhost:3000](http://localhost:3000) を**スマホサイズ**で開くと最適に表示されます。
 
+> スマホ実機で見たいときは、同一 Wi‑Fi 上で `npm run dev -- -H 0.0.0.0` を実行し、
+> スマホのブラウザから `http://<PCのIPアドレス>:3000` を開きます。
+
 ```bash
 npm run build   # 本番ビルド
 npm run lint    # ESLint
 ```
+
+## デプロイ（Vercel で公開）
+
+PC・スマホ（iPhone）の両方から開ける公開URLを発行できます。Next.js なので **Vercel はゼロ設定**（環境変数・追加設定なし）でデプロイできます。
+
+1. [vercel.com/new](https://vercel.com/new) にアクセスし、GitHub アカウントを連携。
+2. リポジトリ `iwatch-pomi/research-assistant` を **Import**。
+3. **Production Branch** にこのアプリのブランチ（例: `claude/jolly-carson-iig1od`、または `main` へマージ済みなら `main`）を指定。
+4. Framework は Next.js が自動検出されるので、そのまま **Deploy**。
+5. 数十秒で `https://<プロジェクト名>.vercel.app` が発行され、PC・スマホどちらのブラウザからも開けます。以後、そのブランチへ push するたび自動で再デプロイされます。
+
+> **データに関する注意**: 現状はインメモリのモックのため、**ページをリロードすると初期状態に戻り、端末間でのデータ同期はありません**。
+> Web ↔ iPhone のリアルタイム同期は、将来 `src/services/firebaseTaskRepository.ts` を有効化した時点で実現できます（差し替え口は `getTaskRepository()` の1箇所のみ）。
 
 ## ディレクトリ構成
 
